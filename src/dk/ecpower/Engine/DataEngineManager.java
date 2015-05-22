@@ -22,7 +22,7 @@ public class DataEngineManager extends ConnectionManager {
 	Properties pp = rm.getPropertyFile();
 	Engine[] engine = null;
 	properties[] props = null;
-	final int antalraekker = 1000;
+	final int antalraekker = 100;
 	int maxSMS = 10;
 	
 	public DataEngineManager(){
@@ -99,14 +99,14 @@ public class DataEngineManager extends ConnectionManager {
 		try {
 			conn = ConnectionManager.getInstance().getSingleConnection(lhost, luser, lpword);
 			conn.setAutoCommit(false);
-	        int dsz = engine.length;
-	            if(dsz > 0){
+			int dsz = engine.length;
+			if(dsz > 0){
 	        	        String sql = "";
-	        	        st = conn.prepareStatement(sql);
-			        for(int m=0; m < dsz; m++ ){
+	        	        for(int m=0; m < dsz; m++ ){
 			        	try{
-			        	        sql = "Insert into reginastring(callid, date, phonenumber, receiverphonenumber, copyCode, anlaegId, reginastring) values(?,?,?,?,?,?,?) on duplicate key update reginastring = values(reginastring), receiverphonenumber = values(receiverphonenumber), copyCode = values(copyCode)";
-			        	        st.clearParameters();
+			        	    /* on duplicate key update reginastring = values(reginastring), receiverphonenumber = values(receiverphonenumber), copyCode = values(copyCode)*/
+			        	        sql = "Insert into reginastring(callid, date, phonenumber, receiverphonenumber, copyCode, anlaegId, reginastring) values(?,?,?,?,?,?,?)  on duplicate key update reginastring = values(reginastring), receiverphonenumber = values(receiverphonenumber), copyCode = values(copyCode) ";
+			        	        st = conn.prepareStatement(sql);
 			        	        st.setString(1, engine[m].getCallid());
 			        		st.setTimestamp(2, engine[m].getDate());
 			        		st.setString(3, engine[m].getPhonenumber());
@@ -114,14 +114,13 @@ public class DataEngineManager extends ConnectionManager {
 			        		st.setInt(5, engine[m].getCopycode());
 			        		st.setLong(6, engine[m].getAnlaegId());
 			        		st.setString(7, engine[m].getReginastring());
-			        	        st.addBatch(sql);
+			        	        st.executeUpdate();
 				        }catch(SQLException ee){
 			        		 AppLogger.getInstance().logDB(ee.getMessage(), lhost, luser, lpword);
 			        		 ee.getMessage();
 			        	}
 			        }
-			        st.executeBatch();
-			        conn.commit();
+	        	        conn.commit();			       
 			        UpdateRemoteHost(rhost, ruser, rpword, lhost, luser, lpword, smshost, smsuser, smspword, interval, server);
 			        
 			        if(deleteremote)
@@ -236,7 +235,6 @@ public class DataEngineManager extends ConnectionManager {
 		try{
 			conn = ConnectionManager.getInstance().getSingleConnection(smshost, smsuser, smspword);
 			pstmt = conn.prepareStatement(sql);
-			pstmt.clearParameters();
 			pstmt.setString(1, msg);
 			pstmt.setInt(2,  maxSMS);
 			pstmt.executeUpdate();
